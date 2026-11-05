@@ -21,10 +21,12 @@ import os, sys, json, time, pathlib, datetime, urllib.request, urllib.parse, url
 
 ROOT = pathlib.Path(__file__).resolve().parent
 CODA, FATTI = ROOT / "coda", ROOT / "pubblicati"
-BASE_URL = "https://fnl-labs.github.io/seles-media"
+# Proprietario e nome arrivano da GitHub Actions: i link restano giusti anche se la org cambia nome.
+REPO = os.environ.get("GITHUB_REPOSITORY", "befnl/seles-media")
+BASE_URL = f"https://{REPO.split('/')[0]}.github.io/{REPO.split('/')[1]}"
 # piano B: il file servito direttamente dalla repo, disponibile appena fatto il push
 # (GitHub Pages a volte resta in coda per molti minuti prima di pubblicare)
-RAW_URL = "https://raw.githubusercontent.com/fnl-labs/seles-media/main"
+RAW_URL = f"https://raw.githubusercontent.com/{REPO}/main"
 
 def url_immagine(path):
     for base in (BASE_URL, RAW_URL):
