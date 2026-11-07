@@ -1,0 +1,17 @@
+{
+  "quando": "2026-11-07T09:00:00+01:00",
+  "dove": [
+    "ig_story",
+    "fb_story"
+  ],
+  "immagini": [
+    "media/20261107-0900-storia-c5-20261107.jpg"
+  ],
+  "didascalia": "",
+  "partita": {
+    "squadra": "C5",
+    "quando": "2026-11-07T18:00:00",
+    "casa": "Seles Gioiosa",
+    "ospite": "Città Di Chiaravalle C5"
+  }
+}
