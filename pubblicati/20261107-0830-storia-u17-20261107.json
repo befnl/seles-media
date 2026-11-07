@@ -1,0 +1,23 @@
+{
+  "quando": "2026-11-07T08:30:00+01:00",
+  "dove": [
+    "ig_story",
+    "fb_story"
+  ],
+  "immagini": [
+    "media/20261107-0830-storia-u17-20261107.jpg"
+  ],
+  "didascalia": "",
+  "partita": {
+    "squadra": "U17",
+    "quando": "2026-11-07T15:00:00",
+    "casa": "Sporting Cittanova",
+    "ospite": "Seles Gioiosa"
+  },
+  "esiti": {
+    "ig_story": "storia Instagram 18090916763274129",
+    "fb_story": "storia Facebook 1840646056962860"
+  },
+  "pubblicato_il": "2026-11-07T07:31:03.780Z",
+  "da": "sveglia"
+}
