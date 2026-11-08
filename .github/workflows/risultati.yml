@@ -1,0 +1,82 @@
+name: Risultati della settimana
+
+# Il post «Risultati» esce da solo dopo l'ultima partita della settimana (di solito la Juniores
+# di domenica alle 17:30). Ogni 30 minuti da domenica a martedì: auto/risultati_auto.py controlla
+# Tuttocampo e, quando tutte le partite da mercoledì a lunedì hanno il punteggio, mette il post in
+# coda/ con l'ora di adesso; la sveglia lo pubblica su Instagram e Facebook entro un minuto.
+# Avvio a mano (tab Actions → Run workflow): "prova" fa la grafica senza pubblicare.
+on:
+  schedule:
+    # orari in UTC: d'inverno l'Italia è un'ora avanti (13:15 UTC = 14:15 italiane)
+    - cron: "15,45 12-23 * * 0"   # domenica dalle 13:15 a mezzanotte
+    - cron: "15,45 * * * 1"       # tutto il lunedì
+    - cron: "15,45 0-13 * * 2"    # martedì fino alle 14:45 (alle 14 esce comunque)
+  workflow_dispatch:
+    inputs:
+      modo:
+        description: "prova = solo grafica, giro = pubblica se è ora"
+        type: choice
+        options: [prova, giro]
+        default: prova
+      oggi:
+        description: "solo per le prove: AAAA-MM-GGTHH:MM"
+        required: false
+
+concurrency:
+  group: risultati
+  cancel-in-progress: false
+
+jobs:
+  risultati:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    env:
+      TZ: Europe/Rome
+      META_PAGE_TOKEN: ${{ secrets.META_PAGE_TOKEN }}
+      META_IG_USER_ID: ${{ secrets.META_IG_USER_ID }}
+      MODO: ${{ inputs.modo || 'giro' }}
+      OGGI: ${{ inputs.oggi }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Già uscito?
+        id: gia
+        run: python3 auto/risultati_auto.py controllo ${OGGI:+--oggi "$OGGI"}
+
+      - uses: actions/setup-python@v5
+        if: steps.gia.outputs.fatto != 'true' || env.MODO == 'prova'
+        with:
+          python-version: "3.12"
+
+      - name: Browser per Tuttocampo e per la grafica
+        if: steps.gia.outputs.fatto != 'true' || env.MODO == 'prova'
+        run: |
+          pip install -q playwright==1.48.0 pillow
+          python -m playwright install --with-deps chromium
+
+      - name: Stemmi già scaricati
+        if: steps.gia.outputs.fatto != 'true' || env.MODO == 'prova'
+        uses: actions/cache@v4
+        with:
+          path: auto/assets/loghi/avversari
+          key: stemmi-${{ github.run_id }}
+          restore-keys: stemmi-
+
+      - name: Risultati
+        if: steps.gia.outputs.fatto != 'true' || env.MODO == 'prova'
+        run: |
+          git config user.name "seles-bot"
+          git config user.email "actions@github.com"
+          python auto/risultati_auto.py "$MODO" ${OGGI:+--oggi "$OGGI"}
+
+      - name: Grafica della prova
+        if: env.MODO == 'prova' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: risultati-prova
+          path: auto/out-auto/
+          if-no-files-found: ignore
