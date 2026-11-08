@@ -136,12 +136,17 @@ async def leggi_giornata(pg, sq, g, anno):
     return m
 
 
+PREPARA_PAGINA = None      # risultati_auto.py su GitHub: fa passare Tuttocampo dal ponte Cloudflare
+
+
 async def leggi_tutto(oggi):
     from playwright.async_api import async_playwright
     out = []
     async with async_playwright() as p:
         b = await p.chromium.launch()
         pg = await b.new_page(locale="it-IT", user_agent=UA, viewport={"width": 1280, "height": 2000})
+        if PREPARA_PAGINA:
+            await PREPARA_PAGINA(pg)
         for sq in SQUADRE:
             await pg.goto(f"{sq['base']}/Risultati", wait_until="networkidle", timeout=60000)
             g0 = re.search(r"(\d+)° Giornata", await pg.inner_text("body"))

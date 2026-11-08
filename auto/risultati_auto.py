@@ -23,7 +23,7 @@ Dopo una modifica a settimana.py o notte.py va rilanciato, poi commit e push di 
 Prova senza pubblicare niente (scrive la grafica in out-auto/):
   ../../../../.venv-render/bin/python risultati_auto.py prova [--oggi 2026-11-09T19:00]
 """
-import os, sys, json, shutil, asyncio, argparse, subprocess, pathlib, datetime as dt, urllib.request, urllib.parse
+import io, os, sys, json, shutil, asyncio, argparse, subprocess, pathlib, datetime as dt, urllib.request, urllib.parse
 
 HERE = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
@@ -34,6 +34,64 @@ REPO = HERE.parent if (HERE.parent / "coda").is_dir() else HERE.parent / "seles-
 BUILD = HERE / "build.py" if (HERE / "build.py").exists() else S.BUILD
 ATTESA = dt.timedelta(hours=2, minutes=15)      # dal calcio d'inizio: C11 con intervallo e recupero
 CHIAVE = "i risultati della settimana"           # prima riga della didascalia (settimana.didascalia)
+PROSSIMO = HERE / "out" / "prossimo.txt"         # prima ora utile per rileggere Tuttocampo (cache di GitHub)
+
+# ---------------------------------------------------------------- ponte Cloudflare
+# Tuttocampo risponde 403 agli indirizzi di GitHub: su GitHub ogni richiesta per *.tuttocampo.it
+# passa dal Worker seles-tuttocampo (beFNL/Clienti/SELES/tuttocampo-ponte), il resto va diretto.
+PONTE, PONTE_CHIAVE = os.environ.get("TC_PONTE"), os.environ.get("TC_CHIAVE")
+_urlopen = urllib.request.urlopen
+
+
+def tc(url):
+    return (urllib.parse.urlparse(url).hostname or "").endswith("tuttocampo.it")
+
+
+def dal_ponte(url, headers):
+    req = urllib.request.Request(PONTE, data=json.dumps({"url": url, "headers": headers}).encode(),
+                                 headers={"x-chiave": PONTE_CHIAVE, "content-type": "application/json"})
+    with _urlopen(req, timeout=60) as r:
+        un = lambda k: json.loads(urllib.parse.unquote(r.headers[k]))
+        return int(r.headers["x-stato"]), un("x-intestazioni"), un("x-cookie"), r.read()
+
+
+async def instrada(route):
+    rq = route.request
+    host = urllib.parse.urlparse(rq.url).hostname or ""
+    if not tc(rq.url):
+        # la verifica anti-bot (awswaf.com) e gli script esterni passano diretti; pubblicità e tracciamenti no
+        if host.endswith("awswaf.com") or rq.resource_type in ("script", "stylesheet"):
+            return await route.continue_()
+        return await route.abort()
+    if rq.method != "GET" or rq.resource_type in ("image", "media", "font"):
+        return await route.abort()
+    try:
+        st, hd, ck, body = await asyncio.to_thread(dal_ponte, rq.url, await rq.all_headers())
+    except Exception:
+        return await route.abort()
+    if ck:
+        hd["set-cookie"] = "\n".join(ck)
+    await route.fulfill(status=st, headers=hd, body=body)
+
+
+async def prepara_pagina(pg):
+    await pg.route("**/*", instrada)
+
+
+def urlopen_ponte(req, *a, **k):
+    """Gli stemmi (b2-content.tuttocampo.it) passano anche loro dal ponte."""
+    url = req.full_url if isinstance(req, urllib.request.Request) else req
+    if not tc(url):
+        return _urlopen(req, *a, **k)
+    st, _, _, body = dal_ponte(url, {"user-agent": S.UA, "accept": "image/png,image/*"})
+    if st != 200:
+        raise RuntimeError(f"stemma non scaricato ({st}): {url}")
+    return io.BytesIO(body)
+
+
+if PONTE and PONTE_CHIAVE:
+    S.PREPARA_PAGINA = prepara_pagina
+    urllib.request.urlopen = urlopen_ponte
 
 
 def finestra(oggi):
@@ -74,6 +132,14 @@ def gia_uscito(inizio):
         if x["testo"].strip().lower().startswith(CHIAVE) and x["quando"] >= inizio:
             return x["link"]
     return None
+
+
+def rimanda(quando, prova):
+    if prova:
+        return
+    PROSSIMO.parent.mkdir(parents=True, exist_ok=True)
+    PROSSIMO.write_text(quando.isoformat(timespec="minutes"), encoding="utf-8")
+    print(f"· prossima lettura di Tuttocampo non prima di {quando:%a %d/%m %H:%M}")
 
 
 def grafica(ris, out, nome):
@@ -134,6 +200,7 @@ def giro(oggi, prova):
         raise SystemExit("✗ da Tuttocampo non arriva nessuna partita: pagina cambiata o accesso bloccato")
     if not sett:
         print("· nessuna partita della Seles in questa settimana: niente da pubblicare")
+        rimanda(scad, prova)
         return
     attesa = []
     for m in sett:
@@ -146,6 +213,8 @@ def giro(oggi, prova):
             attesa.append(m)
     if attesa and oggi < scad:
         print(f"· aspetto: {len(attesa)} {'partita ancora aperta' if len(attesa) == 1 else 'partite ancora aperte'} (esce comunque martedì alle 14 con quelle che ci sono)")
+        # rilegge Tuttocampo solo quando può esserci qualcosa di nuovo: fine dell'ultima partita, o tra 25'
+        rimanda(min(scad, max([q(m) + ATTESA for m in attesa] + [oggi + dt.timedelta(minutes=25)])), prova)
         if not prova:
             return
         print("  (prova: preparo lo stesso la grafica con le partite già chiuse)")
@@ -175,6 +244,8 @@ async def diagnosi():
     async with async_playwright() as p:
         b = await p.chromium.launch()
         pg = await b.new_page(locale="it-IT", user_agent=S.UA, viewport={"width": 1280, "height": 2000})
+        if S.PREPARA_PAGINA:
+            await S.PREPARA_PAGINA(pg)
         r = await pg.goto(f"{S.SQUADRE[0]['base']}/Risultati", wait_until="domcontentloaded", timeout=60000)
         await pg.wait_for_timeout(4000)
         t = (await pg.inner_text("body"))[:600].replace("\n", " | ")
@@ -183,12 +254,19 @@ async def diagnosi():
 
 
 def controllo(oggi):
-    """Solo libreria standard, prima di installare il browser: scrive fatto=true per GitHub se è già uscito."""
+    """Solo libreria standard, prima di installare il browser: salta=true per GitHub se è già uscito
+    o se l'ultima lettura ha detto che prima di una certa ora non può esserci niente di nuovo."""
     g = gia_uscito(finestra(oggi)[1])
-    print("✓ già uscito o in coda:", g) if g else print("· non ancora uscito: si legge Tuttocampo")
+    attendi = dt.datetime.fromisoformat(PROSSIMO.read_text().strip()) if PROSSIMO.exists() else None
+    if g:
+        print("✓ già uscito o in coda:", g)
+    elif attendi and oggi < attendi:
+        print(f"· non ancora: Tuttocampo si rilegge da {attendi:%a %d/%m %H:%M}")
+    else:
+        print("· non ancora uscito: si legge Tuttocampo")
     if os.environ.get("GITHUB_OUTPUT"):
         with open(os.environ["GITHUB_OUTPUT"], "a") as f:
-            f.write(f"fatto={'true' if g else 'false'}\n")
+            f.write(f"salta={'true' if g or (attendi and oggi < attendi) else 'false'}\n")
 
 
 def sincronizza():

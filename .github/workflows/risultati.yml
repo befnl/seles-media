@@ -8,7 +8,7 @@ name: Risultati della settimana
 on:
   schedule:
     # orari in UTC: d'inverno l'Italia è un'ora avanti (13:15 UTC = 14:15 italiane)
-    - cron: "15,45 12-23 * * 0"   # domenica dalle 13:15 a mezzanotte
+    - cron: "15,45 18-23 * * 0"   # domenica dalle 19:15 (la Juniores in casa finisce verso le 19:15) a mezzanotte
     - cron: "15,45 * * * 1"       # tutto il lunedì
     - cron: "15,45 0-13 * * 2"    # martedì fino alle 14:45 (alle 14 esce comunque)
   workflow_dispatch:
@@ -36,6 +36,9 @@ jobs:
       TZ: Europe/Rome
       META_PAGE_TOKEN: ${{ secrets.META_PAGE_TOKEN }}
       META_IG_USER_ID: ${{ secrets.META_IG_USER_ID }}
+      # Tuttocampo blocca gli indirizzi di GitHub: le sue pagine passano dal Worker seles-tuttocampo
+      TC_PONTE: https://seles-tuttocampo.fnl-labs.workers.dev
+      TC_CHIAVE: ${{ secrets.TC_CHIAVE }}
       MODO: ${{ inputs.modo || 'giro' }}
       OGGI: ${{ inputs.oggi }}
     steps:
@@ -43,31 +46,32 @@ jobs:
         with:
           ref: main
 
+      # stemmi già scaricati e ora della prossima lettura utile (auto/out/prossimo.txt)
+      - uses: actions/cache@v4
+        with:
+          path: |
+            auto/assets/loghi/avversari
+            auto/out/prossimo.txt
+          key: risultati-${{ github.run_id }}
+          restore-keys: risultati-
+
       - name: Già uscito?
         id: gia
         run: python3 auto/risultati_auto.py controllo ${OGGI:+--oggi "$OGGI"}
 
       - uses: actions/setup-python@v5
-        if: steps.gia.outputs.fatto != 'true' || env.MODO == 'prova'
+        if: steps.gia.outputs.salta != 'true' || env.MODO == 'prova'
         with:
           python-version: "3.12"
 
       - name: Browser per Tuttocampo e per la grafica
-        if: steps.gia.outputs.fatto != 'true' || env.MODO == 'prova'
+        if: steps.gia.outputs.salta != 'true' || env.MODO == 'prova'
         run: |
           pip install -q playwright==1.48.0 pillow
           python -m playwright install --with-deps chromium
 
-      - name: Stemmi già scaricati
-        if: steps.gia.outputs.fatto != 'true' || env.MODO == 'prova'
-        uses: actions/cache@v4
-        with:
-          path: auto/assets/loghi/avversari
-          key: stemmi-${{ github.run_id }}
-          restore-keys: stemmi-
-
       - name: Risultati
-        if: steps.gia.outputs.fatto != 'true' || env.MODO == 'prova'
+        if: steps.gia.outputs.salta != 'true' || env.MODO == 'prova'
         run: |
           git config user.name "seles-bot"
           git config user.email "actions@github.com"
