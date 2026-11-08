@@ -10,6 +10,7 @@ Un post in coda è un JSON così:
 {
   "quando": "2026-09-27T00:00:00+02:00",   ora locale italiana
   "dove": ["ig", "fb"],          oppure ["ig_story"] per una storia Instagram
+                                 oppure ["ig_reel", "fb_reel"] per un reel: immagini = [video.mp4, copertina.jpg]
   "immagini": ["media/20260927-match-c11.jpg"],
   "didascalia": "testo del post..."
 }
@@ -33,11 +34,13 @@ def url_immagine(path):
         u = f"{base}/{path}"
         try:
             with urllib.request.urlopen(urllib.request.Request(u, method="HEAD"), timeout=20) as r:
-                if r.status == 200 and r.headers.get("content-type", "").startswith("image/"):
+                tipo = r.headers.get("content-type", "")
+                if r.status == 200 and (tipo.startswith(("image/", "video/")) or
+                                        (path.endswith(".mp4") and tipo == "application/octet-stream")):
                     return u
         except Exception:
             pass
-    raise RuntimeError(f"immagine non raggiungibile: {path}")
+    raise RuntimeError(f"file non raggiungibile: {path}")
 VER = os.environ.get("META_API_VERSION", "v23.0")
 API = f"https://graph.facebook.com/{VER}"
 TOKEN = os.environ.get("META_PAGE_TOKEN", "")
@@ -55,8 +58,8 @@ def api(method, path, **params):
     except urllib.error.HTTPError as e:
         raise RuntimeError(f"Meta {e.code}: {e.read().decode(errors='replace')[:400]}")
 
-def attendi(cid):
-    for _ in range(60):
+def attendi(cid, giri=60):
+    for _ in range(giri):
         st = api("GET", cid, fields="status_code")
         if st.get("status_code") == "FINISHED": return
         if st.get("status_code") == "ERROR": raise RuntimeError(f"contenitore in errore: {cid}")
@@ -74,6 +77,19 @@ def pubblica_ig(urls, caption):
     attendi(c["id"])
     r = api("POST", f"{IG}/media_publish", creation_id=c["id"])
     return api("GET", r["id"], fields="permalink").get("permalink", r["id"])
+
+def pubblica_reel_ig(urls, caption):
+    # urls[0] = video .mp4, urls[1] = copertina (facoltativa)
+    p = {"media_type": "REELS", "video_url": urls[0], "caption": caption, "share_to_feed": "true"}
+    if len(urls) > 1: p["cover_url"] = urls[1]
+    c = api("POST", f"{IG}/media", **p)
+    attendi(c["id"], giri=150)          # il video richiede più tempo di un'immagine (fino a 10 minuti)
+    r = api("POST", f"{IG}/media_publish", creation_id=c["id"])
+    return api("GET", r["id"], fields="permalink").get("permalink", r["id"])
+
+def pubblica_reel_fb(urls, caption):
+    r = api("POST", f"{PAGE}/videos", file_url=urls[0], description=caption)
+    return f"https://www.facebook.com/{r['id']}"
 
 def pubblica_storia(urls):
     c = api("POST", f"{IG}/media", image_url=urls[0], media_type="STORIES")
@@ -124,6 +140,8 @@ def main():
                 if dove == "ig": esiti[dove] = pubblica_ig(urls, cap)
                 elif dove == "ig_story": esiti[dove] = pubblica_storia(urls)
                 elif dove == "fb_story": esiti[dove] = pubblica_storia_fb(urls)
+                elif dove == "ig_reel": esiti[dove] = pubblica_reel_ig(urls, cap)
+                elif dove == "fb_reel": esiti[dove] = pubblica_reel_fb(urls, cap)
                 else: esiti[dove] = pubblica_fb(urls, cap)
                 print(f"✓ {f.name} → {dove}: {esiti[dove]}")
             except Exception as e:
