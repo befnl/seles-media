@@ -129,6 +129,9 @@ def giro(oggi, prova):
                 raise
     q = lambda m: dt.datetime.fromisoformat(m["quando"])
     sett = sorted((m for m in tutte if inizio <= q(m) <= fine), key=q)
+    if not tutte:
+        asyncio.run(diagnosi())
+        raise SystemExit("✗ da Tuttocampo non arriva nessuna partita: pagina cambiata o accesso bloccato")
     if not sett:
         print("· nessuna partita della Seles in questa settimana: niente da pubblicare")
         return
@@ -164,6 +167,19 @@ def giro(oggi, prova):
         print("prova: non metto in coda niente")
         return
     metti_in_coda(img, cap, ris)
+
+
+async def diagnosi():
+    """Cosa vede il browser su Tuttocampo, per capire un blocco."""
+    from playwright.async_api import async_playwright
+    async with async_playwright() as p:
+        b = await p.chromium.launch()
+        pg = await b.new_page(locale="it-IT", user_agent=S.UA, viewport={"width": 1280, "height": 2000})
+        r = await pg.goto(f"{S.SQUADRE[0]['base']}/Risultati", wait_until="domcontentloaded", timeout=60000)
+        await pg.wait_for_timeout(4000)
+        t = (await pg.inner_text("body"))[:600].replace("\n", " | ")
+        print(f"  diagnosi: HTTP {r.status if r else '?'}, titolo «{await pg.title()}», testo: {t}")
+        await b.close()
 
 
 def controllo(oggi):
