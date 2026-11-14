@@ -1,0 +1,23 @@
+{
+  "quando": "2026-11-14T08:30:00+01:00",
+  "dove": [
+    "ig_story",
+    "fb_story"
+  ],
+  "immagini": [
+    "media/20261114-0830-storia-u17-20261114.jpg"
+  ],
+  "didascalia": "",
+  "partita": {
+    "squadra": "U17",
+    "quando": "2026-11-14T14:30:00",
+    "casa": "Seles Gioiosa",
+    "ospite": "Campese"
+  },
+  "esiti": {
+    "ig_story": "storia Instagram 18079636691737141",
+    "fb_story": "storia Facebook 1662580185410840"
+  },
+  "pubblicato_il": "2026-11-14T07:31:00.941Z",
+  "da": "sveglia"
+}
