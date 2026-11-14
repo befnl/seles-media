@@ -1,0 +1,23 @@
+{
+  "quando": "2026-11-14T09:00:00+01:00",
+  "dove": [
+    "ig_story",
+    "fb_story"
+  ],
+  "immagini": [
+    "media/20261114-0900-storia-c5-20261114.jpg"
+  ],
+  "didascalia": "",
+  "partita": {
+    "squadra": "C5",
+    "quando": "2026-11-14T16:00:00",
+    "casa": "Fantastic Five Siderno",
+    "ospite": "Seles Gioiosa"
+  },
+  "esiti": {
+    "ig_story": "storia Instagram 18143036863715001",
+    "fb_story": "storia Facebook 1849209246422369"
+  },
+  "pubblicato_il": "2026-11-14T08:01:03.354Z",
+  "da": "sveglia"
+}
