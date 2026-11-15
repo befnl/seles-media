@@ -1,0 +1,23 @@
+{
+  "quando": "2026-11-15T09:00:00+01:00",
+  "dove": [
+    "ig_story",
+    "fb_story"
+  ],
+  "immagini": [
+    "media/20261115-0900-storia-u19-20261115.jpg"
+  ],
+  "didascalia": "",
+  "partita": {
+    "squadra": "U19",
+    "quando": "2026-11-15T17:30:00",
+    "casa": "Seles Gioiosa",
+    "ospite": "Virtus C5"
+  },
+  "esiti": {
+    "ig_story": "storia Instagram 18130672921864157",
+    "fb_story": "storia Facebook 4492674761048720"
+  },
+  "pubblicato_il": "2026-11-15T08:01:02.183Z",
+  "da": "sveglia"
+}
