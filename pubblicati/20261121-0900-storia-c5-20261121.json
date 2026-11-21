@@ -1,0 +1,23 @@
+{
+  "quando": "2026-11-21T09:00:00+01:00",
+  "dove": [
+    "ig_story",
+    "fb_story"
+  ],
+  "immagini": [
+    "media/20261121-0900-storia-c5-20261121.jpg"
+  ],
+  "didascalia": "",
+  "partita": {
+    "squadra": "C5",
+    "quando": "2026-11-21T18:00:00",
+    "casa": "Seles Gioiosa",
+    "ospite": "Nausicaa C5"
+  },
+  "esiti": {
+    "ig_story": "storia Instagram 18102388823101028",
+    "fb_story": "storia Facebook 3020902004963588"
+  },
+  "pubblicato_il": "2026-11-21T08:01:02.943Z",
+  "da": "sveglia"
+}
