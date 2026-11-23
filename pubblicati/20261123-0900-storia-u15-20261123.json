@@ -1,0 +1,23 @@
+{
+  "quando": "2026-11-23T09:00:00+01:00",
+  "dove": [
+    "ig_story",
+    "fb_story"
+  ],
+  "immagini": [
+    "media/20261123-0900-storia-u15-20261123.jpg"
+  ],
+  "didascalia": "",
+  "partita": {
+    "squadra": "U15",
+    "quando": "2026-11-23T15:00:00",
+    "casa": "Taurianova 1995",
+    "ospite": "Seles Gioiosa"
+  },
+  "esiti": {
+    "ig_story": "storia Instagram 18647101567058856",
+    "fb_story": "storia Facebook 1169774505397227"
+  },
+  "pubblicato_il": "2026-11-23T08:01:01.449Z",
+  "da": "sveglia"
+}
