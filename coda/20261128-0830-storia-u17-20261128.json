@@ -1,0 +1,17 @@
+{
+  "quando": "2026-11-28T08:30:00+01:00",
+  "dove": [
+    "ig_story",
+    "fb_story"
+  ],
+  "immagini": [
+    "media/20261128-0830-storia-u17-20261128.jpg"
+  ],
+  "didascalia": "",
+  "partita": {
+    "squadra": "U17",
+    "quando": "2026-11-28T15:00:00",
+    "casa": "C.S.P.R. 94",
+    "ospite": "Seles Gioiosa"
+  }
+}

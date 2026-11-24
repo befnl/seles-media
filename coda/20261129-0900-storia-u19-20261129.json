@@ -1,0 +1,17 @@
+{
+  "quando": "2026-11-29T09:00:00+01:00",
+  "dove": [
+    "ig_story",
+    "fb_story"
+  ],
+  "immagini": [
+    "media/20261129-0900-storia-u19-20261129.jpg"
+  ],
+  "didascalia": "",
+  "partita": {
+    "squadra": "U19",
+    "quando": "2026-11-29T17:30:00",
+    "casa": "Seles Gioiosa",
+    "ospite": "Futsal Club Filadelfia"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "quando": "2026-11-29T08:30:00+01:00",
+  "dove": [
+    "ig_story",
+    "fb_story"
+  ],
+  "immagini": [
+    "media/20261129-0830-storia-u15-20261129.jpg"
+  ],
+  "didascalia": "",
+  "partita": {
+    "squadra": "U15",
+    "quando": "2026-11-29T09:30:00",
+    "casa": "Seles Gioiosa",
+    "ospite": "Ivan Castiglia Academy"
+  }
+}
