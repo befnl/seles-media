@@ -1,0 +1,23 @@
+{
+  "quando": "2026-11-28T09:00:00+01:00",
+  "dove": [
+    "ig_story",
+    "fb_story"
+  ],
+  "immagini": [
+    "media/20261128-0900-storia-c5-20261128.jpg"
+  ],
+  "didascalia": "",
+  "partita": {
+    "squadra": "C5",
+    "quando": "2026-11-28T16:00:00",
+    "casa": "Polisportiva Borgia",
+    "ospite": "Seles Gioiosa"
+  },
+  "esiti": {
+    "ig_story": "storia Instagram 18085584134342477",
+    "fb_story": "storia Facebook 1122008603933375"
+  },
+  "pubblicato_il": "2026-11-28T08:01:03.282Z",
+  "da": "sveglia"
+}
